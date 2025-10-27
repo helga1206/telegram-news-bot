@@ -768,12 +768,21 @@ def main() -> None:
     application.add_error_handler(error_handler)
     
     # Настраиваем ежедневные дайджесты (каждый день в 9:00)
-    job_queue = application.job_queue
-    job_queue.run_daily(
-        news_bot.send_daily_digest,
-        time=datetime.strptime("09:00", "%H:%M").time(),
-        name="daily_digest"
-    )
+    # Примечание: JobQueue требует дополнительной установки, делаем опционально
+    try:
+        job_queue = application.job_queue
+        if job_queue:
+            job_queue.run_daily(
+                news_bot.send_daily_digest,
+                time=datetime.strptime("09:00", "%H:%M").time(),
+                name="daily_digest"
+            )
+            logger.info("Ежедневные дайджесты включены")
+        else:
+            logger.warning("JobQueue не доступен - ежедневные дайджесты отключены")
+    except Exception as e:
+        logger.warning(f"Не удалось настроить JobQueue: {e}")
+        logger.info("Ежедневные дайджесты отключены")
     
     logger.info("Бот запущен!")
     
