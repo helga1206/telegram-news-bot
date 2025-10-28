@@ -750,9 +750,6 @@ def main() -> None:
         logger.error("BOT_TOKEN не найден в переменных окружения!")
         return
     
-    # Создаем приложение
-    application = Application.builder().token(bot_token).build()
-    
     # Настраиваем меню команд
     async def post_init(app: Application) -> None:
         """Настройка меню команд после инициализации бота"""
@@ -770,7 +767,8 @@ def main() -> None:
         await app.bot.set_my_commands(commands)
         logger.info("Меню команд настроено")
     
-    application.post_init(post_init)
+    # Создаем приложение с post_init
+    application = Application.builder().token(bot_token).post_init(post_init).build()
     
     # Добавляем обработчики команд
     application.add_handler(CommandHandler("start", start))
