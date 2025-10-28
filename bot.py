@@ -472,10 +472,10 @@ news_bot = NewsBot()
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /start"""
     user_id = update.effective_user.id
-    username = update.effective_user.username or "пользователь"
+    first_name = update.effective_user.first_name or "пользователь"
     
     welcome_message = f"""
-👋 Привет, {username}!
+👋 Привет, {first_name}!
 
 Я универсальный бот для новостей и погоды!
 
