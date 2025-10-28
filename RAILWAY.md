@@ -28,3 +28,4 @@ BOT_TOKEN=ваш_токен_от_botfather
 
 Подробная инструкция: смотрите DEPLOYMENT.md
 
+

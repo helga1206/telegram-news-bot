@@ -73,3 +73,4 @@
 3. Проверьте что Start Command: `python bot.py`
 4. Убедитесь что выбран Background Worker, а не Web Service
 
+
