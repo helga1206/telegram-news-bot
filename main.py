@@ -6,19 +6,26 @@
 
 import threading
 import os
-from web_server import app
-from bot import main as bot_main
+import sys
 
 def run_bot():
     """Запускает Telegram бота"""
-    bot_main()
+    import bot
+    bot.main()
+
+def run_web():
+    """Запускает Flask сервер"""
+    from web_server import app
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, threaded=True)
 
 if __name__ == '__main__':
-    # Запускаем бота в отдельном потоке
-    bot_thread = threading.Thread(target=run_bot, daemon=True)
+    # Запускаем бота в отдельном потоке (НЕ daemon!)
+    bot_thread = threading.Thread(target=run_bot)
+    bot_thread.daemon = False  # Не выключать при выходе основного потока
     bot_thread.start()
     
-    # Запускаем Flask сервер для Render health check
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    # Запускаем Flask сервер в текущем потоке
+    print("Starting Flask server...")
+    run_web()
 
