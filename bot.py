@@ -472,10 +472,21 @@ news_bot = NewsBot()
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Обработчик команды /start"""
     user_id = update.effective_user.id
-    first_name = update.effective_user.first_name or "пользователь"
+    
+    # Получаем имя пользователя (приоритет: имя профиля)
+    user = update.effective_user
+    user_name = (
+        user.first_name or 
+        user.full_name or 
+        user.username or 
+        "пользователь"
+    )
+    
+    # Отладочное логирование (для диагностики)
+    logger.info(f"User info - first_name: {user.first_name}, full_name: {user.full_name}, username: {user.username}, chosen: {user_name}")
     
     welcome_message = f"""
-👋 Привет, {first_name}!
+👋 Привет, {user_name}!
 
 Я универсальный бот для новостей и погоды!
 
