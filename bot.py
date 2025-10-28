@@ -11,7 +11,7 @@ import asyncio
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import requests
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 from dotenv import load_dotenv
 
@@ -752,6 +752,25 @@ def main() -> None:
     
     # Создаем приложение
     application = Application.builder().token(bot_token).build()
+    
+    # Настраиваем меню команд
+    async def post_init(app: Application) -> None:
+        """Настройка меню команд после инициализации бота"""
+        commands = [
+            BotCommand("start", "Начать работу с ботом"),
+            BotCommand("weather", "🌤️ Узнать погоду в городе"),
+            BotCommand("get_news", "📰 Получить свежие новости"),
+            BotCommand("add_topic", "➕ Добавить тему для новостей"),
+            BotCommand("remove_topic", "➖ Удалить тему для новостей"),
+            BotCommand("my_topics", "📋 Мои темы для новостей"),
+            BotCommand("digest", "📅 Получить дайджест новостей"),
+            BotCommand("toggle_digest", "⚙️ Вкл/выкл ежедневный дайджест"),
+            BotCommand("help", "ℹ️ Справка по командам")
+        ]
+        await app.bot.set_my_commands(commands)
+        logger.info("Меню команд настроено")
+    
+    application.post_init(post_init)
     
     # Добавляем обработчики команд
     application.add_handler(CommandHandler("start", start))
