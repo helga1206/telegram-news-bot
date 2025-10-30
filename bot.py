@@ -817,6 +817,81 @@ def main() -> None:
     # Запускаем бота
     application.run_polling()
 
+def main_webhook() -> None:
+    """Запуск бота в режиме webhook для Render Web"""
+    bot_token = os.getenv('BOT_TOKEN')
+    if not bot_token:
+        logger.error("BOT_TOKEN не найден в переменных окружения!")
+        return
+
+    # URL сервиса. Приоритет: PUBLIC_URL, затем RENDER_EXTERNAL_URL
+    public_url = os.getenv('PUBLIC_URL') or os.getenv('RENDER_EXTERNAL_URL')
+    if not public_url:
+        logger.error("PUBLIC_URL или RENDER_EXTERNAL_URL не заданы. Невозможно настроить webhook.")
+        return
+
+    public_url = public_url.rstrip('/')
+    port = int(os.getenv('PORT', '10000'))
+
+    async def post_init(app: Application) -> None:
+        commands = [
+            BotCommand("start", "Начать работу с ботом"),
+            BotCommand("weather", "🌤️ Узнать погоду в городе"),
+            BotCommand("get_news", "📰 Получить свежие новости"),
+            BotCommand("add_topic", "➕ Добавить тему для новостей"),
+            BotCommand("remove_topic", "➖ Удалить тему для новостей"),
+            BotCommand("my_topics", "📋 Мои темы для новостей"),
+            BotCommand("digest", "📅 Получить дайджест новостей"),
+            BotCommand("toggle_digest", "⚙️ Вкл/выкл ежедневный дайджест"),
+            BotCommand("help", "ℹ️ Справка по командам")
+        ]
+        await app.bot.set_my_commands(commands)
+        logger.info("Меню команд настроено (webhook)")
+
+    application = Application.builder().token(bot_token).post_init(post_init).build()
+
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("weather", weather))
+    application.add_handler(CommandHandler("add_topic", add_topic))
+    application.add_handler(CommandHandler("remove_topic", remove_topic))
+    application.add_handler(CommandHandler("my_topics", my_topics))
+    application.add_handler(CommandHandler("get_news", get_news))
+    application.add_handler(CommandHandler("digest", digest))
+    application.add_handler(CommandHandler("toggle_digest", toggle_digest))
+    application.add_handler(CommandHandler("help", help_command))
+
+    application.add_error_handler(error_handler)
+
+    try:
+        job_queue = application.job_queue
+        if job_queue:
+            job_queue.run_daily(
+                news_bot.send_daily_digest,
+                time=datetime.strptime("09:00", "%H:%M").time(),
+                name="daily_digest"
+            )
+            logger.info("Ежедневные дайджесты включены")
+    except Exception as e:
+        logger.warning(f"JobQueue не активирован: {e}")
+
+    # URL для webhook: /<token>
+    webhook_path = f"/{bot_token}"
+    webhook_url = f"{public_url}{webhook_path}"
+
+    logger.info(f"Старт webhook: listen=0.0.0.0:{port} path={webhook_path} url={webhook_url}")
+    # PTB сам поднимет aiohttp-сервер и установит webhook
+    application.run_webhook(
+        listen='0.0.0.0',
+        port=port,
+        url_path=bot_token,
+        webhook_url=webhook_url,
+        drop_pending_updates=True,
+    )
+
 if __name__ == '__main__':
-    main()
+    # Автовыбор режима: если доступен URL сервиса — запускаем webhook, иначе polling
+    if os.getenv('PUBLIC_URL') or os.getenv('RENDER_EXTERNAL_URL'):
+        main_webhook()
+    else:
+        main()
 
